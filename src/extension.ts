@@ -1,8 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import util from "./util";
-import fm from "./frontmatter";
+import actions from "./actions";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -18,7 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window
       .showInputBox({
         title: "Quail API Key",
-        prompt: "Please grab your API key from https://quail.ink/profile/apikeys",
+        prompt:
+          "Please grab your API key from https://quail.ink/profile/apikeys",
         ignoreFocusOut: true, // 允许用户在点击外部时继续输入
         placeHolder: "Enter API Key",
       })
@@ -32,7 +32,32 @@ export function activate(context: vscode.ExtensionContext) {
               userApiKey,
               vscode.ConfigurationTarget.Global
             );
-          vscode.window.showInformationMessage("API 密钥已保存！");
+          vscode.window
+            .showInputBox({
+              title: "List ID or slug",
+              prompt: `Your list ID or slug. You can find it in the URL of your list page. For example, if your list URL is https://quail.ink/my-list, your list ID or slug is "my-list".`,
+              placeHolder: "Enter List ID or slug",
+              ignoreFocusOut: true,
+            })
+            .then((userListId) => {
+              if (userListId) {
+                // 如果用户输入了 List ID，保存到配置中
+                vscode.workspace
+                  .getConfiguration()
+                  .update(
+                    "quail.listId",
+                    userListId,
+                    vscode.ConfigurationTarget.Global
+                  );
+                vscode.window.showInformationMessage(
+                  "API Key 和 List ID 已保存！"
+                );
+              } else {
+                vscode.window.showWarningMessage(
+                  "List ID 不能为空，某些功能可能受限。"
+                );
+              }
+            });
         } else {
           vscode.window.showWarningMessage(
             "未提供 API 密钥，某些功能可能受限。"
@@ -43,27 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   let insertMetadata = vscode.commands.registerCommand(
     "extension.insertMetadata",
-    () => {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor) {
-        const document = activeEditor.document;
-        if (document.languageId === "markdown") {
-          const { frontmatter } = util.getActiveFileFrontmatter();
-          if (Object.values(frontmatter as object).length === 0) {
-            const position = new vscode.Position(0, 0);
-            activeEditor.edit((editBuilder) => {
-              const fmc = fm.emptyFrontmatter();
-              editBuilder.insert(position, fmc);
-            });
-          } else {
-            console.log("current frontmatter: ", frontmatter);
-            vscode.window.showWarningMessage(
-              "Metadata already exists, Please edit manually or use AI to generate it"
-            );
-          }
-        }
-      }
-    }
+    actions.insertMetadataFn,
   );
 
   context.subscriptions.push(insertMetadata);

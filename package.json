@@ -29,6 +29,11 @@
           "type": "string",
           "description": "Defaults to value from quail apiKey, unless running in browser.",
           "scope": "application"
+        },
+        "quail.listId": {
+          "type": "string",
+          "description": "Defaults to value from quail listId",
+          "scope": "application"
         }
       }
     }
